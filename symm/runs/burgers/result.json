@@ -1,0 +1,81 @@
+{
+  "name": "burgers",
+  "dim": 5,
+  "status": "CERTIFIED",
+  "delta": 0.0,
+  "index": 1.0,
+  "params": {
+    "D": 2,
+    "onshell_rule": "evolution:highest-t-derivative",
+    "W_V": "identity",
+    "W_E": "identity",
+    "d_star": 2,
+    "param_values": {
+      "nu": 0.1
+    }
+  },
+  "algebra": [
+    [
+      "Integer(1)",
+      "Integer(0)",
+      "Integer(0)"
+    ],
+    [
+      "Integer(0)",
+      "Integer(1)",
+      "Integer(0)"
+    ],
+    [
+      "Integer(0)",
+      "Symbol('t')",
+      "Integer(1)"
+    ],
+    [
+      "Mul(Integer(-1), Integer(2), Symbol('t'))",
+      "Mul(Integer(-1), Symbol('x'))",
+      "Symbol('u')"
+    ],
+    [
+      "Mul(Integer(-1), Pow(Symbol('t'), Integer(2)))",
+      "Mul(Integer(-1), Symbol('t'), Symbol('x'))",
+      "Add(Mul(Symbol('t'), Symbol('u')), Mul(Integer(-1), Symbol('x')))"
+    ]
+  ],
+  "reductions": [
+    {
+      "gen": [
+        "Integer(1)",
+        "Integer(0)",
+        "Integer(0)"
+      ],
+      "z": "Symbol('z', real=True)",
+      "ode": "Add(Mul(Integer(-1), Symbol('nu', positive=True), Derivative(Function('U')(Symbol('z', real=True)), Tuple(Symbol('z', real=True), Integer(2)))), Mul(Function('U')(Symbol('z', real=True)), Derivative(Function('U')(Symbol('z', real=True)), Tuple(Symbol('z', real=True), Integer(1)))))",
+      "residual_zero": true
+    },
+    {
+      "gen": [
+        "Mul(Integer(-1), Integer(2), Symbol('t'))",
+        "Mul(Integer(-1), Symbol('x'))",
+        "Symbol('u')"
+      ],
+      "z": "Symbol('z', real=True)",
+      "ode": "Mul(Pow(Symbol('t'), Rational(-3, 2)), Add(Mul(Integer(-1), Symbol('nu', positive=True), Derivative(Function('U')(Symbol('z', real=True)), Tuple(Symbol('z', real=True), Integer(2)))), Mul(Integer(-1), Rational(1, 2), Symbol('z', real=True), Derivative(Function('U')(Symbol('z', real=True)), Tuple(Symbol('z', real=True), Integer(1)))), Mul(Function('U')(Symbol('z', real=True)), Derivative(Function('U')(Symbol('z', real=True)), Tuple(Symbol('z', real=True), Integer(1)))), Mul(Integer(-1), Rational(1, 2), Function('U')(Symbol('z', real=True)))))",
+      "residual_zero": false
+    }
+  ],
+  "signature": {
+    "dim": 5,
+    "crosscheck_dim": 5,
+    "crosscheck_agrees": true,
+    "algebra_type": {
+      "dim": 5,
+      "abelian": false,
+      "nilpotent": false,
+      "solvable": false,
+      "derived_dims": [
+        5,
+        5
+      ]
+    }
+  }
+}

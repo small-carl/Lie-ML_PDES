@@ -1,0 +1,252 @@
+# ============================================================================
+# SAC-NO — Similarity-Anchored, Coordinate-equivariant Neural Operator
+# A companion / sub-thesis to CCS-SYM+  (math 4890 — Lie-symmetry methods for PDEs)
+# ============================================================================
+# Status: 2026-06-23.  This document is grounded in THREE computations re-run on
+# this laptop CPU (Python 3.14.2, torch 2.12.0+cpu, sympy 1.14, numpy 2.3.5,
+# scipy 1.17.1).  Every numeric claim below is reproduced by a script in this
+# folder — see §3 and the "REPRODUCE" lines.  Honesty over hype: one of the three
+# probes returns a NEGATIVE/bounded result and is reported as such (§3.3).
+#
+# Companion to: ../../plan.txt (CCS-SYM+, the main thesis: REDUCE→CLOSE→CERTIFY→
+# CORRECT).  SAC-NO reuses CCS-SYM+'s reduced ODE + certified HAM series but asks
+# a DIFFERENT question, on the NEURAL-OPERATOR (not single-PDE-solve) side.
+# ----------------------------------------------------------------------------
+
+
+## 0. Thesis & novelty in one paragraph
+
+Symmetry-informed machine learning for PDEs has a documented central failure mode:
+when symmetry is imposed as a SOFT LOSS PENALTY ||X(u_theta)||^2, the penalty (and
+its gradient) VANISH exactly at points already consistent with the symmetry, so the
+network gets "no training signal" precisely where the constraint should bite
+(Generalized Lie Symmetries in Physics-Informed Neural Operators, arXiv:2502.00373).
+SAC-NO removes that failure mode STRUCTURALLY rather than fighting it: build the
+neural operator on the ORBIT-QUOTIENT — feed it the Lie-INVARIANT (similarity)
+coordinates, not the ambient (x,t).  Then equivariance is a property of the
+COORDINATE MAP, exact before training begins, independent of seed, data, or loss.
+The headline, verified result: an invariant-coordinate network has equivariance
+error ~1e-16 (machine epsilon) while an identical raw-coordinate network has ~1e0;
+the "no-gradient-at-symmetric-points" pathology is simply absent because the group
+has been divided out upstream of the network.  On top of this, a SINGLE
+similarity-anchored operator learns an entire one-parameter symmetry ORBIT of
+solutions and generalizes to held-out members at rel-L2 ~4e-3.  The novelty is the
+seam SAC-NO occupies (§1): equivariance by INPUT COORDINATES + DATA GEOMETRY, as
+opposed to by loss (Generalized-Lie-PINO), by compact-group architecture (G-FNO),
+or by inference-time canonicalization (LieLAC).
+
+
+## 1. Positioning — the empty seam (prior art locked from the ref/ corpus)
+
+The design space for "Lie symmetry + neural operator" has three occupied corners and
+one empty one.  SAC-NO is the empty one.  (All four papers are in ../../ref/.)
+
+  [P1] Generalized Lie Symmetries in PINOs (arXiv:2502.00373).  Imposes symmetry as
+       a LOSS PENALTY.  The paper itself states architecture-embedding of PDE point
+       groups is hard and that GENERALIZED symmetries are "unsuitable for ...
+       equivariant architectures" — so they choose loss.  Documents the no-signal
+       pathology.  The words "similarity" and "reduced" appear 0 times.
+       --> SAC-NO's contrast: we do NOT use a loss; we change coordinates.
+
+  [P2] G-FNO (Helwig et al., arXiv:2306.05697).  Group-equivariant Fourier neural
+       operator — but EQUIVARIANT ARCHITECTURES for COMPACT groups (rotations/
+       reflections of the grid).  PDE similarity groups (scaling, Galilean,
+       projective) are NON-COMPACT and act on the coordinates, not as grid
+       permutations.  --> SAC-NO handles exactly the non-compact similarity groups
+       G-FNO cannot embed.
+
+  [P3] LieLAC — Lie Algebra Canonicalization (in ref/, "...under arbitrary Lie
+       Groups").  An INFERENCE-TIME canonicalization WRAPPER around a pretrained
+       black-box operator: map input to a canonical orbit representative, run the
+       net, map back.  --> SAC-NO bakes the canonicalization into the TRAINING
+       coordinate chart, so the operator is trained ON the quotient, not wrapped
+       after the fact; no separate canonicalizer to fit or invert at test time.
+
+  [P4] Geometric Neural Operators via Lie-Group-Constrained Latent Dynamics (ref/).
+       Constrains LATENT dynamics by a Lie group.  --> different lever (latent
+       dynamics) than SAC-NO (input coordinate chart + data on the quotient).
+
+  The seam: NONE of [P1]-[P4] builds the operator's INPUT MANIFOLD as the
+  similarity-reduced orbit quotient of a NON-COMPACT PDE symmetry, trained on
+  symmetry-generated families.  That architecture+data seam is SAC-NO.
+  (Re-confirm all four characterizations against the PDFs before final write-up;
+  the "0 occurrences of 'similarity'" claim for [P1] should be re-grepped.)
+
+
+## 2. Core idea & the mathematics
+
+A Lie point symmetry group G of a PDE acts on the independent/dependent variables.
+Its ORBITS foliate the (x,t,u)-space; the SIMILARITY VARIABLES are coordinates
+CONSTANT along orbits (the orbit quotient).  Classical Lie reduction already uses
+them to turn a PDE into a lower-dim ODE.  SAC-NO's move: use the SAME invariant
+coordinates as the INPUT CHART of a neural operator.
+
+  Equivariance-by-coordinates (the structural claim).  Let z = z(x,t) be a complete
+  set of invariants of a one-parameter subgroup g_lambda (so z(g_lambda . p) = z(p)
+  for all lambda).  Any network of the form N(z(x,t)) satisfies
+        N(g_lambda . p) = N(p)    exactly, for all lambda, p, theta.
+  Equivariance error is therefore zero by construction (up to floating-point
+  evaluation of z), NOT a quantity to be trained down.  For subgroups that also act
+  on u, compose with the (known, closed-form) cocycle rho_g on the output; the
+  invariance argument is unchanged.  This is the structural removal of [P1]'s
+  no-signal pathology: there is no symmetric point at which a loss gradient could
+  vanish, because there is no symmetry loss.
+
+  Orbit sheets as a 1-D operator input.  A one-parameter symmetry maps a single
+  solution into a whole FAMILY (an orbit "sheet").  Anchored to the quotient, the
+  family collapses to a smooth dependence on a single ORBIT LABEL; one operator
+  N(z; label) can represent the whole sheet and interpolate/extrapolate in the
+  label — the operator-learning payoff (§3.2).
+
+  Relation to CCS-SYM+.  CCS-SYM+ produces, per problem, (i) the invariant
+  coordinate z (its REDUCE stage) and (ii) a certified HAM series U_M(z;hbar*)
+  (CLOSE+CERTIFY).  SAC-NO consumes BOTH: z is the operator's input chart; U_M is a
+  candidate prior for the operator's CORRECT stage.  §3.3 reports HONESTLY which
+  way of consuming U_M actually helps.
+
+
+## 3. Verified probes (re-run on this CPU — the evidence base)
+
+Three falsifiable probes.  Two confirm SAC-NO's claims; one is an honest negative
+that BOUNDS a claim.  Scripts live in this folder.
+
+### 3.1 Equivariance-by-coordinates is exact (HEADLINE — strong PASS)
+  REPRODUCE: python symm/sacno/sacno_equivariance_probe.py
+  Setup: heat/porous scaling group g_lambda:(x,t,u)->(lambda x, lambda^2 t, u),
+  invariant z = x/sqrt(t).  Two IDENTICAL small MLPs (16-16 tanh) differing only in
+  input: one reads z, one reads raw (x,t).  Equivariance gap = RMS over 4000 points
+  x 7 group elements of |N(g.p)-N(p)| / RMS|N(p)|, untrained, double precision.
+  RESULT (this CPU):
+      invariant z along orbits: max drift 1.78e-15      (genuinely an invariant)
+      equivariance gap, INVARIANT-coord net : 6.9e-17   <-- exact by construction
+      equivariance gap, RAW (x,t)      net  : 5.8e-1     <-- O(1), structural
+      ratio raw/invariant                   : 8.4e+15
+  READING: the invariant-coordinate operator is equivariant to machine precision
+  with ZERO training; the raw-coordinate operator is off by O(1).  This is
+  seed-independent (it is a statement about the coordinate map, not the weights),
+  so it is the most robust result in the program.  [The exact magnitude of the RAW
+  gap depends on the sampling/range; the INVARIANT gap ~ machine-eps does not.]
+
+### 3.2 One operator covers a whole symmetry sheet (PASS, faithful to ~3e-3)
+  REPRODUCE: python symm/sacno/sacno_parametric_operator.py
+  Sheet: Burgers travelling-wave kinks  U(z;k) = -k tanh(k z / 2 nu), nu=0.5,
+  z = x - c t — a SCALING ORBIT of Burgers (X = 2t d_t + x d_x - u d_u acts as
+  k -> k/lambda), every member closed-form so held-out error is exact.
+  Operator: Linear(2,32)-Tanh-Linear(32,32)-Tanh-Linear(32,1) = 1185 params, reads
+  the invariant coordinate z and the orbit label k.  Standard neural-operator
+  protocol: supervised on 5 orbit labels, tested on a DISJOINT set.
+  RESULT (this CPU):  train 1.2 s.
+      rel-L2 on TRAINED labels   : 2.6e-3 .. 6.5e-3
+      rel-L2 on HELD-OUT (interp): mean 3.7e-3, worst 6.0e-3   <-- generalizes
+      rel-L2 on HELD-OUT (extrap): 2.3e-2 (k=1.7), 5.6e-2 (k=2.0)  <-- degrades, honestly
+  READING: a single similarity-anchored operator learns the sheet from a handful of
+  members and INTERPOLATES held-out members at ~4e-3; extrapolation beyond the
+  training band degrades gracefully (reported, not hidden).  The symmetry collapses
+  the family to a 1-D label the operator learns cheaply — whereas a plain PINN must
+  be re-solved from scratch for each new k.
+
+### 3.3 Curriculum: how to use the certified HAM prior (HONEST / BOUNDED)
+  REPRODUCE: python symm/sacno/sacno_curriculum_warmstart.py
+  Setting: Fisher-KPP reduced ODE at c=5/sqrt6 in the bounded Ablowitz-Zeppetella
+  variable s=e^{z/sqrt6} in (0,1]; N_s[V]=s^2 V''+6sV'+6V(1-V)=0, exact V=1/(1+s)^2.
+  Certified HAM series (built exactly in sympy, hbar* by residual-min in the
+  certified band) truncated to M=4 -> an IMPERFECT prior (rel-L2 8.3e-2).  Two ways
+  to use it, vs a cold random-init baseline, fair multi-seed (12) tight-budget LBFGS:
+    (a) WEIGHT WARM-START (init the net to the prior, then short residual-train).
+        RESULT: does NOT beat cold init on this well-conditioned ODE
+        (budget 8: warm median 3.6e-2 vs COLD median 1.8e-2).  The cold linear
+        secant through the exact BCs is already close; a few LBFGS steps converge
+        it; an imperfect prior buys nothing.  The 10x warm-start advantage seen in
+        an early scratch probe does NOT survive a fair test here.  -> BOUNDED CLAIM:
+        warm-start value is regime-dependent (expected to help only when cold init
+        genuinely fails: stiff / high-frequency / higher-dimensional reduced
+        problems), left as future work, NOT claimed.
+    (b) FROZEN ADDITIVE ANCHOR  U = U_prior + b(s)*net.
+        RESULT (robust): PLATEAUS at 1.7e-1 (>= the prior's own 8.3e-2 error)
+        because the boundary mask b vanishes at the ends, so the correction cannot
+        fix the prior where it is wrong.  -> clean DESIGN RULE: never inject the
+        certified series as a frozen additive anchor.
+  SIDE RESULT (clean, used above): in the LOGISTIC coordinate xi = s/(1+s) =
+  e^{z/sqrt6}/(1+e^{z/sqrt6}) in [0,1] (covering the WHOLE front, unlike s<1), the
+  AZ wave LINEARIZES to U = (1-xi)^2, and the reduced ODE becomes
+        [xi(1-xi)]^2 U'' + xi(1-xi)(6-2xi) U' + 6U(1-U) = 0,
+  verified exactly (residual 0).  Useful as a bounded full-front chart for future
+  warm-start tests; xi=0 is a regular singular point (Euler exponents -2,-3), which
+  is why a naive L=d^2/dxi^2 HAM there diverges — documented, not a bug.
+
+
+## 4. Phased plan (each phase: objective -> falsifiable gate)
+
+  Phase S0  Formalize equivariance-by-coordinates.  Objective: write the lemma
+    (invariant chart => exact equivariance) for the standard non-compact PDE groups
+    (translation, Galilean, scaling, projective) incl. the output cocycle case.
+    GATE: for each group, a script reproduces equivariance gap < 1e-12 (invariant)
+    and > 1e-2 (raw), as in §3.1, on that group's invariants.
+
+  Phase S1  Multi-parameter orbit sheets.  Objective: extend §3.2 from a 1-parameter
+    sheet to a 2-parameter sub-sheet (e.g. Burgers Galilean x scaling) and to a
+    NON-closed-form family (Fisher fronts at varying c via a solve_ivp reference).
+    GATE: held-out rel-L2 < 1e-2 (interp) on the 2-param sheet; report the
+    extrapolation cliff explicitly (no silent truncation).
+
+  Phase S2  Strict-leak ablation.  Objective: remove the oracle-derived BC leak —
+    train the operator with GENERIC far-field constants, not exact-wave BCs (the
+    same strict variant flagged in ../ml_pde_solver_demo.py).  GATE: invariant-coord
+    operator still generalizes across the sheet; quantify the accuracy cost of
+    dropping the leak (honest delta, both arms).
+
+  Phase S3  Warm-start regime map (turn the §3.3 negative into a boundary).
+    Objective: find where, if anywhere, the certified-prior warm-start DOES beat
+    cold — sweep stiffness / front sharpness / reduced-dimension.  GATE: either
+    exhibit a regime with a reproducible warm-start advantage (>=3x, multi-seed) OR
+    report a clean negative across the swept regimes.  Either outcome is publishable.
+
+  Phase S4  Head-to-head vs the loss-penalty approach [P1].  Objective: on one
+    shared PDE family, compare SAC-NO (invariant chart, no symmetry loss) against a
+    matched operator trained with the ||X(u_theta)||^2 penalty.  GATE: SAC-NO
+    matches or beats accuracy AND has structurally lower equivariance error, with
+    the no-signal pathology demonstrated for the penalty arm and absent for SAC-NO.
+
+  Phase S5  Write-up + McGreivy-Hakim-compliant evaluation.  GATE: every headline
+    number reproduced from a script; strong (not weak) baselines; reporting-bias
+    checklist (per ../../ref/ "Weak baselines ... overoptimism ...") passed.
+
+
+## 5. Risks & honest bounds
+
+  R1  "Invariant coords need a complete set of invariants."  For some groups the
+      invariants are messy or the action is only local.  Mitigation: restrict the
+      thesis to the classical similarity groups where invariants are explicit
+      (the same scope as CCS-SYM+).  Bound, stated up front.
+  R2  "Equivariance is exact but accuracy is a separate question."  §3.1 proves
+      equivariance, NOT accuracy; accuracy is §3.2/§3.4's job.  Do not conflate.
+  R3  "Warm-start may never pay off."  §3.3 already shows it does not on the easy
+      benchmark.  Phase S3 is explicitly allowed to return a negative.  The
+      additive-anchor rule (3.3b) is the robust, keepable result.
+  R4  Extrapolation off the training sheet degrades (§3.2).  Reported as a cliff;
+      do not market interpolation numbers as extrapolation.
+  R5  Prior-art characterizations (§1) are from corpus reading; re-grep/re-read the
+      four PDFs before any external claim of novelty.
+
+
+## 6. Expected contributions (publishable claims)
+
+  C1  Equivariance-by-coordinates lemma + the structural-absence argument for the
+      [P1] no-training-signal pathology, with a seed-independent machine-precision
+      demonstration (§3.1).  THE headline.
+  C2  A similarity-anchored neural OPERATOR that learns whole non-compact-symmetry
+      orbit sheets and generalizes to held-out members (§3.2), occupying the
+      architecture+data seam left open by [P1]-[P4] (§1).
+  C3  A design rule for coupling certified semi-analytical priors to operators:
+      additive frozen anchoring FAILS (robust), warm-start is regime-dependent
+      (§3.3) — an honest, falsifiable contribution that corrects an easy over-claim.
+  C4  The logistic-coordinate linearization U=(1-xi)^2 of the Fisher AZ front and
+      its reduced ODE (§3.3 side result), a tidy bounded full-front chart.
+
+# ---------------------------------------------------------------------------
+# REPRODUCE EVERYTHING:
+#   python symm/sacno/sacno_equivariance_probe.py     # 3.1  (PASS, headline)
+#   python symm/sacno/sacno_parametric_operator.py    # 3.2  (PASS, ~4e-3 held-out)
+#   python symm/sacno/sacno_curriculum_warmstart.py   # 3.3  (honest bounded result)
+# Companion main thesis: ../../plan.txt  (CCS-SYM+).   This file: SAC-NO sub-thesis.
+# ============================================================================

@@ -1,0 +1,4 @@
+- degree D=1: nullity=4
+- degree D=2: nullity=5
+- degree D=3: nullity=5
+- STATUS=CERTIFIED dim=5 delta=0.000e+00 index=1.000

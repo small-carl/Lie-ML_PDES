@@ -1,0 +1,79 @@
+{
+  "step_index": 0,
+  "state": {
+    "D": 1,
+    "dim": 4,
+    "coeffs": [
+      "Symbol('c_0')",
+      "Symbol('c_1')",
+      "Symbol('c_2')",
+      "Symbol('c_3')",
+      "Symbol('c_4')",
+      "Symbol('c_5')",
+      "Symbol('c_6')",
+      "Symbol('c_7')",
+      "Symbol('c_8')",
+      "Symbol('c_9')",
+      "Symbol('c_10')",
+      "Symbol('c_11')"
+    ],
+    "basis": [
+      {
+        "Symbol('c_0')": "Integer(1)",
+        "Symbol('c_1')": "Integer(0)",
+        "Symbol('c_2')": "Integer(0)",
+        "Symbol('c_3')": "Integer(0)",
+        "Symbol('c_4')": "Integer(0)",
+        "Symbol('c_5')": "Integer(0)",
+        "Symbol('c_6')": "Integer(0)",
+        "Symbol('c_7')": "Integer(0)",
+        "Symbol('c_8')": "Integer(0)",
+        "Symbol('c_9')": "Integer(0)",
+        "Symbol('c_10')": "Integer(0)",
+        "Symbol('c_11')": "Integer(0)"
+      },
+      {
+        "Symbol('c_0')": "Integer(0)",
+        "Symbol('c_1')": "Integer(0)",
+        "Symbol('c_2')": "Integer(0)",
+        "Symbol('c_3')": "Integer(0)",
+        "Symbol('c_4')": "Integer(1)",
+        "Symbol('c_5')": "Integer(0)",
+        "Symbol('c_6')": "Integer(0)",
+        "Symbol('c_7')": "Integer(0)",
+        "Symbol('c_8')": "Integer(0)",
+        "Symbol('c_9')": "Integer(0)",
+        "Symbol('c_10')": "Integer(0)",
+        "Symbol('c_11')": "Integer(0)"
+      },
+      {
+        "Symbol('c_0')": "Integer(0)",
+        "Symbol('c_1')": "Integer(0)",
+        "Symbol('c_2')": "Integer(0)",
+        "Symbol('c_3')": "Integer(0)",
+        "Symbol('c_4')": "Integer(0)",
+        "Symbol('c_5')": "Integer(0)",
+        "Symbol('c_6')": "Integer(1)",
+        "Symbol('c_7')": "Integer(0)",
+        "Symbol('c_8')": "Integer(1)",
+        "Symbol('c_9')": "Integer(0)",
+        "Symbol('c_10')": "Integer(0)",
+        "Symbol('c_11')": "Integer(0)"
+      },
+      {
+        "Symbol('c_0')": "Integer(0)",
+        "Symbol('c_1')": "Integer(0)",
+        "Symbol('c_2')": "Integer(-2)",
+        "Symbol('c_3')": "Integer(0)",
+        "Symbol('c_4')": "Integer(0)",
+        "Symbol('c_5')": "Integer(-1)",
+        "Symbol('c_6')": "Integer(0)",
+        "Symbol('c_7')": "Integer(0)",
+        "Symbol('c_8')": "Integer(0)",
+        "Symbol('c_9')": "Integer(0)",
+        "Symbol('c_10')": "Integer(0)",
+        "Symbol('c_11')": "Integer(1)"
+      }
+    ]
+  }
+}

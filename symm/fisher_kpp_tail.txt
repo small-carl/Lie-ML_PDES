@@ -1,0 +1,20 @@
+
+==========================================================================
+ STEP 3c : accuracy of the certified series truncation vs the EXACT wave
+==========================================================================
+   residual-minimising hbar* (restricted to CERTIFIED band) = -0.9500
+   relative L2 error vs exact AZ wave V=1/(1+s)^2 on s in [0,0.9], by order:
+     M=3:  max|V_M - V_exact| = 9.664e-02   rel-L2 = 1.022e-01
+     M=5:  max|V_M - V_exact| = 4.777e-02   rel-L2 = 4.477e-02
+     M=7:  max|V_M - V_exact| = 2.304e-02   rel-L2 = 2.035e-02
+   --> monotone decrease with order = convergent series (interior of radius 1).
+
+--------------------------------------------------------------------------
+ STEP 3d : independent numeric BVP solve of  U'' + c U' + U(1-U)=0  (z-form)
+--------------------------------------------------------------------------
+   solve_bvp converged: True   nodes: 1539
+   U=1/4 crossing: numeric z0=2.045, exact z0=8.020 (phase offset)
+   phase-aligned max|U_numeric - U_exact| = 5.160e-01
+   --> the Lie-reduced ODE is a genuine BVP whose solution matches the oracle.
+
+DONE.

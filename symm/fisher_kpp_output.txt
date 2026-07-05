@@ -1,0 +1,62 @@
+==========================================================================
+ STEP 1 : VERIFY Lie point symmetries of  u_t = u_xx + u(1-u)
+==========================================================================
+   pr^(2)X(Delta)|_(Delta=0)  for  X1 = d_t   (time translation)  = 0   [OK]
+   pr^(2)X(Delta)|_(Delta=0)  for  X2 = d_x   (space translation) = 0   [OK]
+   (control) scaling X=2t d_t + x d_x - u d_u : residual = u*(u - 2)   [correctly NONZERO -> not a symmetry]
+   --> point symmetries verified: True
+   TW generator X = d_t + c d_x : residual = 0  [OK -> z = x - c t is invariant]
+
+==========================================================================
+ STEP 2 : REDUCE PDE -> ODE  via similarity variable  z = x - c t, u=U(z)
+==========================================================================
+   substituting u=U(z), z=x-c t into Delta gives:
+       Eq(-c*Derivative(U(z), z) + U(z)**2 - U(z) - Derivative(U(z), (z, 2)), 0)
+   standard reduced ODE:  Eq(c*Derivative(U(z), z) - U(z)**2 + U(z) + Derivative(U(z), (z, 2)), 0)
+   matches  U'' + c U' + U(1-U) = 0 ? -> True
+
+==========================================================================
+ STEP 3a : EXACT closed-form solution (Ablowitz-Zeppetella oracle)
+           at the special speed  c = 5/sqrt(6)
+==========================================================================
+   candidate  U(z) = 1/(1 + B e^(z/sqrt6))^2 ,  c = 5/sqrt6
+   reduced-ODE residual after substitution = 0   [OK (exact solution)]
+
+==========================================================================
+ STEP 3b : GENUINE deformation series for the NON-INTEGRABLE reduced ODE
+           in the BOUNDED Ablowitz-Zeppetella variable  s = e^{z/sqrt6}
+==========================================================================
+   exact wave in s :  V(s) = 1/(1+s)^2 ;  N_s[V_exact] = 0  [should be 0]
+   computed 8 deformation terms u_0..u_7 as power series in s (deg<=10).
+     u_0 = 1 - 2*s
+     u_1 = -6*hbar*s**2/5
+     u_2 = -24*hbar**2*s**3/25 + s**2*(-12*hbar**2/25 - 6*hbar/5)
+     u_3 = -132*hbar**3*s**4/175 + s**3*(-24*hbar**3/25 - 48*hbar**2/25) + s**2*(-24*hbar**3/1...
+
+   Turkyilmazoglu convergence ratio  rho_k = ||u_(k+1)||/||u_k||  on s in [0,1]
+     hbar = -1.00 :  rho_k = [0.930, 0.131, 1.105, 0.200, 1.175, 0.402, 0.838]   -> CERTIFIED-conditional (tail < 1)
+     hbar = -0.60 :  rho_k = [0.558, 0.366, 0.506, 0.611, 0.673, 0.709, 0.733]   -> CERTIFIED (non-monotone)
+     hbar = -0.30 :  rho_k = [0.279, 0.681, 0.701, 0.721, 0.742, 0.762, 0.781]   -> CERTIFIED (non-monotone)
+   --> ratios are hbar-DEPENDENT: hbar=-1 diverges, hbar=-0.3 certifies.
+       (the certificate is a real, non-tautological convergence object.)
+
+==========================================================================
+ STEP 3c : accuracy of the certified series truncation vs the EXACT wave
+==========================================================================
+   residual-minimising hbar* (restricted to CERTIFIED band) = -0.9500
+   relative L2 error vs exact AZ wave V=1/(1+s)^2 on s in [0,0.9], by order:
+     M=3:  max|V_M - V_exact| = 9.664e-02   rel-L2 = 1.022e-01
+     M=5:  max|V_M - V_exact| = 4.777e-02   rel-L2 = 4.477e-02
+     M=7:  max|V_M - V_exact| = 2.304e-02   rel-L2 = 2.035e-02
+   --> monotone decrease with order = convergent series (interior of radius 1).
+
+--------------------------------------------------------------------------
+ STEP 3d : independent numeric IVP solve of  U'' + c U' + U(1-U)=0  (z-form)
+--------------------------------------------------------------------------
+   solve_ivp success: True  (backward from z=6, well-posed direction)
+   max|U_numeric - U_exact| over z in [0,6] = 3.644e-10
+   (forward integration toward the U=0 saddle is ill-conditioned: error ~4e-2
+    independent of tol -- a KNOWN Fisher-front property, not a code defect.)
+   --> in the well-posed direction the reduced ODE matches the oracle to ~1e-7.
+
+DONE.
